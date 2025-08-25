@@ -7,10 +7,10 @@ export class GhostStrategy {
 	private strategyManager: PromptStrategyManager
 	private debug: boolean
 
-	constructor(debug: boolean = false) {
+	constructor(options?: { debug: boolean }) {
 		this.streamingParser = new GhostStreamingParser()
-		this.strategyManager = new PromptStrategyManager(debug)
-		this.debug = debug
+		this.strategyManager = new PromptStrategyManager(options)
+		this.debug = options?.debug ?? false
 	}
 
 	/**

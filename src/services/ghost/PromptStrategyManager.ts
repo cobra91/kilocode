@@ -19,8 +19,8 @@ export class PromptStrategyManager {
 	private contextAnalyzer: ContextAnalyzer
 	private debug: boolean
 
-	constructor(debug: boolean = false) {
-		this.debug = debug
+	constructor(options?: { debug: boolean }) {
+		this.debug = options?.debug ?? false
 		this.contextAnalyzer = new ContextAnalyzer()
 
 		// Register all strategies in priority order
