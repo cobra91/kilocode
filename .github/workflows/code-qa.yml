@@ -98,14 +98,7 @@ jobs:
             - name: Install dependencies
               run: pnpm install
             - name: Build (to build and copy WASM files)
-              run: |
-                  if [ "$RUNNER_OS" = "Windows" ]; then
-                    echo "Windows CI: Excluding JetBrains packages due to platform incompatibility"
-                    pnpm turbo vsix --filter='!@kilo-code/jetbrains-*' --log-order grouped --output-logs new-only
-                  else
-                    echo "Linux/macOS CI: Building all packages including JetBrains"
-                    pnpm build
-                  fi
+              run: pnpm run vsix
               shell: bash
             - name: Run unit tests
               working-directory: src
