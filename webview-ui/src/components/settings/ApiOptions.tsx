@@ -32,6 +32,7 @@ import {
 	internationalZAiDefaultModelId,
 	mainlandZAiDefaultModelId,
 	fireworksDefaultModelId,
+	featherlessDefaultModelId,
 	ioIntelligenceDefaultModelId,
 	qwenCodeDefaultModelId,
 	rooDefaultModelId,
@@ -96,6 +97,7 @@ import {
 	// kilocode_change end
 	ZAi,
 	Fireworks,
+	Featherless,
 } from "./providers"
 
 import { MODELS_BY_PROVIDER, PROVIDERS } from "./constants"
@@ -359,6 +361,7 @@ const ApiOptions = ({
 							: internationalZAiDefaultModelId,
 				},
 				fireworks: { field: "apiModelId", default: fireworksDefaultModelId },
+				featherless: { field: "apiModelId", default: featherlessDefaultModelId },
 				"io-intelligence": { field: "ioIntelligenceModelId", default: ioIntelligenceDefaultModelId },
 				roo: { field: "apiModelId", default: rooDefaultModelId },
 				openai: { field: "openAiModelId" },
@@ -496,6 +499,7 @@ const ApiOptions = ({
 
 			{selectedProvider === "requesty" && (
 				<Requesty
+					uriScheme={uriScheme}
 					apiConfiguration={apiConfiguration}
 					setApiConfigurationField={setApiConfigurationField}
 					routerModels={routerModels}
@@ -551,7 +555,11 @@ const ApiOptions = ({
 			)}
 
 			{selectedProvider === "vertex" && (
-				<Vertex apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
+				<Vertex
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					fromWelcomeView={fromWelcomeView}
+				/>
 			)}
 
 			{selectedProvider === "gemini" && (
@@ -691,6 +699,10 @@ const ApiOptions = ({
 						</div>
 					)}
 				</div>
+			)}
+
+			{selectedProvider === "featherless" && (
+				<Featherless apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
 
 			{selectedProviderModels.length > 0 && (

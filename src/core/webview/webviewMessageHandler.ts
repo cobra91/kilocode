@@ -304,7 +304,24 @@ export const webviewMessageHandler = async (
 			// Initializing new instance of Cline will make sure that any
 			// agentically running promises in old instance don't affect our new
 			// task. This essentially creates a fresh slate for the new task.
-			await provider.createTask(message.text, message.images)
+			try {
+				await provider.createTask(message.text, message.images)
+				// Task created successfully - notify the UI to reset
+				await provider.postMessageToWebview({
+					type: "invoke",
+					invoke: "newChat",
+				})
+			} catch (error) {
+				// For all errors, reset the UI and show error
+				await provider.postMessageToWebview({
+					type: "invoke",
+					invoke: "newChat",
+				})
+				// Show error to user
+				vscode.window.showErrorMessage(
+					`Failed to create task: ${error instanceof Error ? error.message : String(error)}`,
+				)
+			}
 			break
 		// kilocode_change start
 		case "condense":
@@ -577,7 +594,14 @@ export const webviewMessageHandler = async (
 					key: "openrouter",
 					options: { provider: "openrouter", apiKey: openRouterApiKey, baseUrl: openRouterBaseUrl },
 				},
-				{ key: "requesty", options: { provider: "requesty", apiKey: apiConfiguration.requestyApiKey } },
+				{
+					key: "requesty",
+					options: {
+						provider: "requesty",
+						apiKey: apiConfiguration.requestyApiKey,
+						baseUrl: apiConfiguration.requestyBaseUrl,
+					},
+				},
 				{ key: "glama", options: { provider: "glama" } },
 				{ key: "unbound", options: { provider: "unbound", apiKey: apiConfiguration.unboundApiKey } },
 				{
@@ -3087,6 +3111,11 @@ export const webviewMessageHandler = async (
 					text: text,
 				})
 			}
+			break
+		}
+		case "showMdmAuthRequiredNotification": {
+			// Show notification that organization requires authentication
+			vscode.window.showWarningMessage(t("common:mdm.info.organization_requires_auth"))
 			break
 		}
 	}
