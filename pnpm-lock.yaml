@@ -777,8 +777,8 @@ importers:
         specifier: ^6.2.0
         version: 6.2.0(webpack@5.101.3)
       glob:
-        specifier: ^5.0.13
-        version: 5.0.15
+        specifier: ^11.0.3
+        version: 11.0.3
       gulp:
         specifier: ^4.0.0
         version: 4.0.2
@@ -891,8 +891,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.2
       rimraf:
-        specifier: ^2.2.8
-        version: 2.7.1
+        specifier: ^6.0.1
+        version: 6.0.1
       sinon:
         specifier: ^12.0.1
         version: 12.0.1
@@ -8780,10 +8780,6 @@ packages:
     resolution: {integrity: sha512-2Nim7dha1KVkaiF4q6Dj+ngPPMdfvLJEOpZk/jKiUAkqKebpGAWQXAq9z1xu9HKu5lWfqw/FASuccEjyznjPaA==}
     engines: {node: 20 || >=22}
     hasBin: true
-
-  glob@5.0.15:
-    resolution: {integrity: sha512-c9IPMazfRITpmAAKi22dK1VKxGDX9ehhqfABDriL/lzO92xcUKEJPQHrVA/2YHSNFB4iFlykVmWvwo48nr3OxA==}
-    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
@@ -23370,14 +23366,6 @@ snapshots:
       minipass: 7.1.2
       package-json-from-dist: 1.0.1
       path-scurry: 2.0.0
-
-  glob@5.0.15:
-    dependencies:
-      inflight: 1.0.6
-      inherits: 2.0.4
-      minimatch: 3.1.2
-      once: 1.4.0
-      path-is-absolute: 1.0.1
 
   glob@7.2.3:
     dependencies:

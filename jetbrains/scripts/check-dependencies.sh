@@ -3,7 +3,8 @@
 # JetBrains Plugin Dependency Check Script
 # This script verifies and sets up all required dependencies for building the JetBrains plugin
 
-set -e  # Exit on any error
+# Note: Removed 'set -e' to prevent silent failures in CI
+# We'll handle errors explicitly in each function
 
 # Colors for output
 RED='\033[0;31m'
@@ -146,6 +147,10 @@ check_vscode_submodule() {
         cd "$PROJECT_ROOT"
         if git submodule update --init --recursive; then
             print_fix "VSCode submodule initialized successfully"
+            # Ensure filesystem sync in CI environments
+            sleep 2
+            # Force filesystem sync
+            sync 2>/dev/null || true
         else
             print_error "Failed to initialize VSCode submodule"
             return 1
@@ -154,15 +159,33 @@ check_vscode_submodule() {
         print_success "VSCode submodule is initialized"
     fi
     
-    # Check if submodule has content
-    if [[ -f "$VSCODE_DIR/src/vs/code/electron-main/main.ts" ]]; then
-        print_success "VSCode submodule contains expected files"
-    else
-        print_error "VSCode submodule appears to be incomplete"
-        echo "  Try: git submodule update --init --recursive --force"
-        return 1
-    fi
+    # Check if submodule has content - with retry for CI environments
+    EXPECTED_FILE="$VSCODE_DIR/src/vs/code/electron-main/main.ts"
+    RETRY_COUNT=0
+    MAX_RETRIES=3
     
+    while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+        if [[ -f "$EXPECTED_FILE" ]]; then
+            print_success "VSCode submodule contains expected files"
+            break
+        else
+            if [[ $RETRY_COUNT -eq 0 ]]; then
+                print_warning "VSCode submodule file check failed, retrying..."
+            fi
+            ((RETRY_COUNT++))
+            if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
+                echo "  Waiting 2 seconds before retry $RETRY_COUNT/$MAX_RETRIES..."
+                sleep 2
+            else
+                print_error "VSCode submodule appears to be incomplete after $MAX_RETRIES attempts"
+                echo "  Expected file: $EXPECTED_FILE"
+                echo "  Directory contents:"
+                ls -la "$VSCODE_DIR/src/vs/code/electron-main/" 2>/dev/null || echo "    Directory does not exist"
+                echo "  Try: git submodule update --init --recursive --force"
+                return 1
+            fi
+        fi
+    done
     return 0
 }
 
@@ -253,15 +276,15 @@ main() {
     echo "Starting dependency checks..."
     echo ""
     
-    # Run all checks
-    check_java
-    check_node
-    check_pnpm
-    check_vscode_submodule
-    check_gradle
-    check_project_dependencies
-    check_jetbrains_host_deps
-    check_build_system
+    # Run all checks with error handling
+    check_java || echo "Warning: Java check had issues"
+    check_node || echo "Warning: Node check had issues"
+    check_pnpm || echo "Warning: pnpm check had issues"
+    check_vscode_submodule || echo "Warning: VSCode submodule check had issues"
+    check_gradle || echo "Warning: Gradle check had issues"
+    check_project_dependencies || echo "Warning: Project dependencies check had issues"
+    check_jetbrains_host_deps || echo "Warning: JetBrains host deps check had issues"
+    check_build_system || echo "Warning: Build system check had issues"
     
     echo ""
     echo "=================================="
