@@ -92,7 +92,7 @@ def download(Project project){
 
     def targetDir = new File(projectBuild, "gen/node_modules")
     def txtFile = new File(projectBuild, "gen/platform.txt")
-    mergeDirectoriesWithArchSupport(list, targetDir, txtFile)
+    mergeDirectories(list, targetDir,txtFile)
 
     def zipFile = new File(project.projectDir,"platform.zip")
     if(zipFile.exists()) {
@@ -101,81 +101,29 @@ def download(Project project){
 }
 
 
-def mergeDirectoriesWithArchSupport(List<File> dirs, File targetDir, File outputFile = null) {
+def mergeDirectories(List<File> dirs, File targetDir, File outputFile = null) {
     def outputContent = new StringBuilder()
     if (!targetDir.exists()) {
         targetDir.mkdirs()
     }
 
-    // Collect all file paths, with special handling for .node files
+    // Collect all file paths (relative paths), ignore .DS_Store
     def allFiles = []
-    def nativeModules = [:]  // Track .node files by architecture
-    
     dirs.each { dir ->
         if (dir.exists()) {
-            def archName = dir.name  // e.g., "darwin-arm64", "darwin-x64"
-            
             dir.eachFileRecurse { file ->
-                if (file.isFile() && file.name != ".DS_Store") {
+                if (file.isFile() && file.name != ".DS_Store") {  // Ignore .DS_Store
                     def relativePath = dir.toPath().relativize(file.toPath()).toString()
-                    
-                    // Special handling for native .node files
-                    if (file.name.endsWith('.node')) {
-                        if (!nativeModules.containsKey(relativePath)) {
-                            nativeModules[relativePath] = [:]
-                        }
-                        nativeModules[relativePath][archName] = file
-                    } else {
-                        allFiles << [dir: dir, file: file, relativePath: relativePath, arch: archName]
-                    }
+                    allFiles << [dir: dir, file: file, relativePath: relativePath]
                 }
+                
             }
         }
     }
 
-    // Handle native modules separately - create architecture-specific directories
-    nativeModules.each { relativePath, archFiles ->
-        archFiles.each { arch, file ->
-            def targetPath = "native-modules/${arch}/${relativePath}"
-            def targetFile = new File(targetDir, targetPath)
-            targetFile.parentFile.mkdirs()
-            Files.copy(file.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }
-        
-        // Create a platform detection script for runtime selection
-        def moduleDir = new File(targetDir, relativePath).parentFile
-        moduleDir.mkdirs()
-        def loaderScript = new File(moduleDir, relativePath.split('/').last().replace('.node', '-loader.js'))
-        loaderScript.text = """
-// Auto-generated native module loader
-const os = require('os');
-const path = require('path');
-
-function loadNativeModule() {
-    const platform = os.platform();
-    const arch = os.arch();
-    
-    let platformDir;
-    if (platform === 'darwin') {
-        platformDir = arch === 'arm64' ? 'darwin-arm64' : 'darwin-x64';
-    } else if (platform === 'win32') {
-        platformDir = 'windows-x64';
-    } else if (platform === 'linux') {
-        platformDir = 'linux-x64';
-    } else {
-        throw new Error(`Unsupported platform: \${platform}-\${arch}`);
-    }
-    
-    const nativeModulePath = path.join(__dirname, '../../native-modules', platformDir, '${relativePath}');
-    return require(nativeModulePath);
-}
-
-module.exports = loadNativeModule();
-"""
-    }
-
-    // Handle regular files with existing logic
+    // Group by relative path
     def groupedFiles = allFiles.groupBy { it.relativePath }
+
     groupedFiles.each { relativePath, entries ->
         def targetFile = new File(targetDir, relativePath)
         targetFile.parentFile.mkdirs()
@@ -196,40 +144,31 @@ module.exports = loadNativeModule();
                     }
                 }
                 def hash = digest.digest().encodeHex().toString()
-                [hash: hash, file: file, dir: entry.dir, arch: entry.arch]
+                [hash: hash, file: file, dir: entry.dir]
             }.groupBy { it.hash }
 
             if (uniqueHashes.size() == 1) {
                 // Same content, keep one copy
                 Files.copy(entries[0].file.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
             } else {
-                // Different content, prefer current architecture or fallback
-                def currentArch = getCurrentArchitecture()
-                def preferredEntry = entries.find { it.arch.contains(currentArch) } ?: entries[0]
-                Files.copy(preferredEntry.file.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                
+                // Different content, add directory name as suffix
                 if (outputFile) {
-                    outputContent.append("$relativePath (used ${preferredEntry.arch})\n")
+                    outputContent.append("$relativePath\n")
+                } else {
+                    println "$relativePath"
+                }
+                uniqueHashes.each { hash, files ->
+                    def sourceFile = files[0].file
+                    def dirName = files[0].dir.name
+                    def newName = targetFile.name + dirName
+                    def conflictFile = new File(targetFile.parentFile, newName)
+                    Files.copy(sourceFile.toPath(), conflictFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
                 }
             }
         }
     }
-    
     if (outputFile && outputContent.length() > 0) {
         outputFile.parentFile.mkdirs()
         outputFile.text = outputContent.toString()
-    }
-}
-
-def getCurrentArchitecture() {
-    def os = System.getProperty("os.name").toLowerCase()
-    def arch = System.getProperty("os.arch").toLowerCase()
-    
-    if (os.contains("mac")) {
-        return arch.contains("aarch64") || arch.contains("arm") ? "arm64" : "x64"
-    } else if (os.contains("win")) {
-        return "x64"
-    } else {
-        return "x64"
     }
 }
