@@ -78,7 +78,8 @@
 				"copy:resource-kilocode",
 				"copy:resource-host",
 				"copy:resource-logs",
-				"copy:resource-nodemodules"
+				"copy:resource-nodemodules",
+				"propDep"
 			]
 		},
 		"run": {
