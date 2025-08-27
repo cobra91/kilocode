@@ -21,6 +21,7 @@
         libnotify
         jetbrains.idea-community
         jetbrains.jdk
+        jdk17
         gradle
         unzip
         # Build tools for native modules
@@ -71,7 +72,7 @@
 
       # Set library path for dynamic linking
       shellHook = ''
-        export JAVA_HOME="${pkgs.jetbrains.jdk}"
+        export JAVA_HOME="${pkgs.jdk17}"
         export PATH="$JAVA_HOME/bin:$PATH"
         export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [
           pkgs.xorg.libX11
