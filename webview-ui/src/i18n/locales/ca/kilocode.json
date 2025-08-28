@@ -191,7 +191,7 @@
 			"autoTrigger": "Activació automàtica",
 			"enableQuickInlineTaskKeybinding": {
 				"label": "Tasca ràpida en línia",
-				"description": "Només necessites un canvi ràpid? Selecciona codi (o no!) i prem Cmd+I. Descriu el teu objectiu en llenguatge natural (\"crea un component de React amb aquestes props\", \"afegeix gestió d'errors a aquesta funció\"), i obtén múltiples suggeriments llestos per utilitzar directament al teu editor. <DocsLink>Veure drecera</DocsLink>"
+				"description": "Només necessites un canvi ràpid? Selecciona codi (o no!) i prem {{keybinding}}. Descriu el teu objectiu en llenguatge natural (\"crea un component de React amb aquestes props\", \"afegeix gestió d'errors a aquesta funció\"), i obtén múltiples suggeriments llestos per utilitzar directament al teu editor. <DocsLink>Veure drecera</DocsLink>"
 			},
 			"enableAutoInlineTaskKeybinding": {
 				"label": "Tasca automàtica en línia",

@@ -191,7 +191,7 @@
 			"autoTrigger": "Automatische Trigger",
 			"enableQuickInlineTaskKeybinding": {
 				"label": "Snelle Inline Taak",
-				"description": "Heb je maar een snelle aanpassing nodig? Selecteer wat code (of niet!) en druk op Cmd+I. Beschrijf je doel in gewoon Nederlands (\"maak een React-component met deze props\", \"voeg foutafhandeling toe aan deze functie\"), en krijg meerdere, direct bruikbare suggesties rechtstreeks in je editor. <DocsLink>Zie sneltoets</DocsLink>"
+				"description": "Heb je maar een snelle aanpassing nodig? Selecteer wat code (of niet!) en druk op {{keybinding}}. Beschrijf je doel in gewoon Nederlands (\"maak een React-component met deze props\", \"voeg foutafhandeling toe aan deze functie\"), en krijg meerdere, direct bruikbare suggesties rechtstreeks in je editor. <DocsLink>Zie sneltoets</DocsLink>"
 			},
 			"enableAutoInlineTaskKeybinding": {
 				"label": "Automatische Inline Taak",

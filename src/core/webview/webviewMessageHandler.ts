@@ -995,6 +995,31 @@ export const webviewMessageHandler = async (
 		case "openGlobalKeybindings":
 			vscode.commands.executeCommand("workbench.action.openGlobalKeybindings", message.text ?? "kilo-code.")
 			break
+		case "getKeybindings":
+			if (message.commandIds) {
+				try {
+					const { getKeybindingLabels } = await import("../../utils/keybindings")
+					const keybindings = await getKeybindingLabels(message.commandIds, provider.context)
+					// Filter out undefined values
+					const filteredKeybindings: Record<string, string> = {}
+					for (const [key, value] of Object.entries(keybindings)) {
+						if (value !== undefined) {
+							filteredKeybindings[key] = value
+						}
+					}
+					provider.postMessageToWebview({
+						type: "keybindings",
+						keybindings: filteredKeybindings,
+					})
+				} catch (error) {
+					console.warn("Failed to get keybindings:", error)
+					provider.postMessageToWebview({
+						type: "keybindings",
+						keybindings: {},
+					})
+				}
+			}
+			break
 		case "showSystemNotification":
 			const isSystemNotificationsEnabled = getGlobalState("systemNotificationsEnabled") ?? true
 			if (!isSystemNotificationsEnabled) {

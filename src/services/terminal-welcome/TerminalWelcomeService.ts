@@ -1,6 +1,7 @@
 // kilocode_change - new file
 import * as vscode from "vscode"
 import { t } from "../../i18n"
+import { getCurrentKeybindingLabel, getPlatformKeybinding } from "../../utils/keybindings"
 
 /**
  * Service that displays welcome messages in newly opened terminals
@@ -37,16 +38,20 @@ export class TerminalWelcomeService {
 		setTimeout(() => this.showWelcomeMessage(terminal), 500)
 	}
 
-	private showWelcomeMessage(terminal: vscode.Terminal): void {
-		const shortcut = this.getKeyboardShortcut()
+	private async showWelcomeMessage(terminal: vscode.Terminal): Promise<void> {
+		const shortcut = await this.getKeyboardShortcut()
 		const message = t("kilocode:terminalCommandGenerator.tipMessage", { shortcut })
 		vscode.window.showInformationMessage(message)
 	}
 
-	private getKeyboardShortcut(): string {
-		const isMac = process.platform === "darwin"
-		const modifier = isMac ? "Cmd" : "Ctrl"
-		return `${modifier}+Shift+G`
+	private async getKeyboardShortcut(): Promise<string> {
+		try {
+			const keybinding = await getCurrentKeybindingLabel("kilo-code.generateTerminalCommand", this.context)
+			return keybinding || getPlatformKeybinding("ctrl+shift+g") // Fallback to platform-specific default
+		} catch (error) {
+			// Fallback to platform-specific default
+			return getPlatformKeybinding("ctrl+shift+g")
+		}
 	}
 
 	public dispose(): void {

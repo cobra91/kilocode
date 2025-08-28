@@ -85,6 +85,9 @@
 					"current": "Use Current Configuration"
 				}
 			}
+		},
+		"terminalCommandGenerator": {
+			"tipMessage": "💡 Tip: Use {{shortcut}} to generate terminal commands with AI assistance!"
 		}
 	},
 	"chat": {
@@ -201,7 +204,7 @@
 			},
 			"enableQuickInlineTaskKeybinding": {
 				"label": "Quick Inline Task",
-				"description": "Only need a quick change? Select some code (or don't!) and hit Cmd+I. Describe your goal in plain English (\"create a React component with these props\", \"add error handling to this function\"), and get multiple, ready-to-use suggestions right in your editor. <DocsLink>See shortcut</DocsLink>"
+				"description": "Only need a quick change? Select some code (or don't!) and hit {{keybinding}}. Describe your goal in plain English (\"create a React component with these props\", \"add error handling to this function\"), and get multiple, ready-to-use suggestions right in your editor. <DocsLink>See shortcut</DocsLink>"
 			},
 			"enableSmartInlineTaskKeybinding": {
 				"label": "Smart Inline Task",

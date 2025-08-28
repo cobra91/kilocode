@@ -12,6 +12,7 @@ import { SetCachedStateField } from "../../settings/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Slider } from "@src/components/ui"
 import { vscode } from "@/utils/vscode"
 import { ControlledCheckbox } from "../common/ControlledCheckbox"
+import { useKeybindings } from "../../../hooks/useKeybindings"
 
 type GhostServiceSettingsViewProps = HTMLAttributes<HTMLDivElement> & {
 	ghostServiceSettings: GhostServiceSettings
@@ -33,6 +34,7 @@ export const GhostServiceSettingsView = ({
 		enableSmartInlineTaskKeybinding,
 	} = ghostServiceSettings || {}
 	const { listApiConfigMeta } = useExtensionState()
+	const keybindings = useKeybindings(["kilo-code.ghost.promptCodeSuggestion", "kilo-code.ghost.generateSuggestions"])
 
 	const onEnableAutoTriggerChange = (newValue: boolean) => {
 		setCachedStateField("ghostServiceSettings", {
@@ -161,6 +163,9 @@ export const GhostServiceSettingsView = ({
 						<div className="text-vscode-descriptionForeground text-sm mt-1">
 							<Trans
 								i18nKey="kilocode:ghost.settings.enableQuickInlineTaskKeybinding.description"
+								values={{
+									keybinding: keybindings["kilo-code.ghost.promptCodeSuggestion"] || "Command+I",
+								}}
 								components={{
 									DocsLink: (
 										<a
