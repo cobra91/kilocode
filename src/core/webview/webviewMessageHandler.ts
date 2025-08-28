@@ -589,6 +589,10 @@ export const webviewMessageHandler = async (
 			const openRouterApiKey = apiConfiguration.openRouterApiKey || message?.values?.openRouterApiKey
 			const openRouterBaseUrl = apiConfiguration.openRouterBaseUrl || message?.values?.openRouterBaseUrl
 
+			// kilocode_change start: force flush models cache when baseUrl changes
+			await flushModels("openrouter")
+			// kilocode_change end
+
 			const modelFetchPromises: Array<{ key: RouterName; options: GetModelsOptions }> = [
 				{
 					key: "openrouter",

@@ -34,10 +34,14 @@ export const getModelEndpoints = async ({
 	router,
 	modelId,
 	endpoint,
+	baseUrl,
+	apiKey,
 }: {
 	router: RouterName
 	modelId?: string
 	endpoint?: string
+	baseUrl?: string
+	apiKey?: string
 }): Promise<ModelRecord> => {
 	// OpenRouter is the only provider that supports model endpoints, but you
 	// can see how we'd extend this to other providers in the future.
@@ -53,7 +57,10 @@ export const getModelEndpoints = async ({
 		return modelProviders
 	}
 
-	modelProviders = await getOpenRouterModelEndpoints(modelId)
+	modelProviders = await getOpenRouterModelEndpoints(modelId, {
+		openRouterBaseUrl: baseUrl,
+		openRouterApiKey: apiKey,
+	} as any)
 
 	if (Object.keys(modelProviders).length > 0) {
 		// console.log(`[getModelProviders] API fetch for ${key} -> ${Object.keys(modelProviders).length}`)
