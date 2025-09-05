@@ -62,7 +62,6 @@ export const PROVIDERS = [
 	// kilocode_change start
 	{ value: "gemini-cli", label: "Gemini CLI" },
 	{ value: "virtual-quota-fallback", label: "Virtual Quota Fallback" },
-	{ value: "qwen-code", label: "Qwen Code" },
 	// kilocode_change end
 	{ value: "deepseek", label: "DeepSeek" },
 	{ value: "moonshot", label: "Moonshot" },
