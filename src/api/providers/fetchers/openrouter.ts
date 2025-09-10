@@ -60,6 +60,7 @@ export type OpenRouterModel = z.infer<typeof openRouterModelSchema>
  */
 
 export const openRouterModelEndpointSchema = modelRouterBaseModelSchema.extend({
+	model_name: z.string(), // kilocode_change
 	provider_name: z.string(),
 	tag: z.string().optional(),
 })
@@ -126,6 +127,7 @@ export async function getOpenRouterModels(
 			models[id] = parseOpenRouterModel({
 				id,
 				model,
+				displayName: model.name, // kilocode_change
 				inputModality: architecture?.input_modalities,
 				outputModality: architecture?.output_modalities,
 				maxTokens: top_provider?.max_completion_tokens,
@@ -173,6 +175,7 @@ export async function getOpenRouterModelEndpoints(
 			models[endpoint.tag ?? endpoint.provider_name] = parseOpenRouterModel({
 				id,
 				model: endpoint,
+				displayName: endpoint.model_name, // kilocode_change
 				inputModality: architecture?.input_modalities,
 				outputModality: architecture?.output_modalities,
 				maxTokens: endpoint.max_completion_tokens,
@@ -194,6 +197,7 @@ export async function getOpenRouterModelEndpoints(
 export const parseOpenRouterModel = ({
 	id,
 	model,
+	displayName, // kilocode_change
 	inputModality,
 	outputModality,
 	maxTokens,
@@ -201,6 +205,7 @@ export const parseOpenRouterModel = ({
 }: {
 	id: string
 	model: OpenRouterBaseModel
+	displayName?: string // kilocode_change
 	inputModality: string[] | null | undefined
 	outputModality: string[] | null | undefined
 	maxTokens: number | null | undefined
@@ -226,7 +231,10 @@ export const parseOpenRouterModel = ({
 		description: model.description,
 		supportsReasoningEffort: supportedParameters ? supportedParameters.includes("reasoning") : undefined,
 		supportedParameters: supportedParameters ? supportedParameters.filter(isModelParameter) : undefined,
-		preferredIndex: model.preferredIndex, // kilocode_change
+		// kilocode_change start
+		displayName,
+		preferredIndex: model.preferredIndex,
+		// kilocode_change end
 	}
 
 	// The OpenRouter model definition doesn't give us any hints about
