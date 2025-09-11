@@ -119,7 +119,7 @@ import { ConsecutiveMistakeLimitControl } from "./ConsecutiveMistakeLimitControl
 import { BedrockCustomArn } from "./providers/BedrockCustomArn"
 import { KiloCode } from "../kilocode/settings/providers/KiloCode" // kilocode_change
 import { buildDocLink } from "@src/utils/docLinks"
-import { KiloProviderRouting } from "./providers/KiloProviderRouting"
+import { KiloProviderRouting, KiloProviderRoutingManagedByOrganization } from "./providers/KiloProviderRouting"
 import { OpenRouterMarkupInfoView } from "../kilocode/FreeModelsLink"
 
 export interface ApiOptionsProps {
@@ -843,13 +843,16 @@ const ApiOptions = ({
 
 			{
 				// kilocode_change start
-				(selectedProvider === "kilocode" || selectedProvider === "openrouter") && (
-					<KiloProviderRouting
-						apiConfiguration={apiConfiguration}
-						setApiConfigurationField={setApiConfigurationField}
-						kilocodeDefaultModel={kilocodeDefaultModel}
-					/>
-				)
+				(selectedProvider === "kilocode" || selectedProvider === "openrouter") &&
+					(apiConfiguration.kilocodeOrganizationId ? (
+						<KiloProviderRoutingManagedByOrganization />
+					) : (
+						<KiloProviderRouting
+							apiConfiguration={apiConfiguration}
+							setApiConfigurationField={setApiConfigurationField}
+							kilocodeDefaultModel={kilocodeDefaultModel}
+						/>
+					))
 				// kilocode_change end
 			}
 

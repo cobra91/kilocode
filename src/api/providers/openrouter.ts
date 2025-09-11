@@ -105,7 +105,12 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 	private client: OpenAI
 	protected models: ModelRecord = {}
 	protected endpoints: ModelRecord = {}
-	private readonly providerName = "OpenRouter"
+
+	// kilocode_change start property
+	protected get providerName() {
+		return "OpenRouter"
+	}
+	// kilocode_change end
 
 	constructor(options: ApiHandlerOptions) {
 		super()
