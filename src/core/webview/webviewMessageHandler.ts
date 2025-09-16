@@ -738,6 +738,7 @@ export const webviewMessageHandler = async (
 				ollama: {},
 				lmstudio: {},
 				deepinfra: {},
+				"claude-code": {}, // kilocode_change
 			}
 
 			const safeGetModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
@@ -751,8 +752,9 @@ export const webviewMessageHandler = async (
 					throw error // Re-throw to be caught by Promise.allSettled
 				}
 			}
+			await flushModels("claude-code") // Claude-Code models are dynamic - always fetch fresh
 
-			// kilocode_change start: openrouter auth, kilocode provider
+			// kilocode_change start: openrouter auth, kilocode provider, claude-code provider
 			const openRouterApiKey = apiConfiguration.openRouterApiKey || message?.values?.openRouterApiKey
 			const openRouterBaseUrl = apiConfiguration.openRouterBaseUrl || message?.values?.openRouterBaseUrl
 
@@ -789,6 +791,13 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.deepInfraBaseUrl,
 					},
 				},
+				{
+					key: "claude-code",
+					options: {
+						provider: "claude-code",
+						claudeCodePath: apiConfiguration.claudeCodePath,
+					},
+				},
 			]
 			// kilocode_change end
 
@@ -815,6 +824,12 @@ export const webviewMessageHandler = async (
 
 			const results = await Promise.allSettled(
 				modelFetchPromises.map(async ({ key, options }) => {
+					console.log(
+						"🔍 [WebViewMessageHandler] Fetching models for provider:",
+						key,
+						"with options:",
+						options,
+					)
 					const models = await safeGetModels(options)
 					return { key, models } // key is RouterName here
 				}),
