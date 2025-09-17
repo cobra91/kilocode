@@ -124,11 +124,11 @@ export class ClaudeCodeHandler extends BaseProvider implements ApiHandler {
 	/**
 	 * Read Claude Code's native configuration files to detect provider and models
 	 * Checks multiple possible locations in order of priority:
-	 * 1. ~/.claude.json (main global config)
-	 * 2. ~/.claude/settings.json (global user settings)
-	 * 3. ~/.claude/settings.local.json (local user settings)
-	 * 4. ./.claude/settings.json (project-specific settings)
-	 * 5. ./.claude/settings.local.json (project-specific local settings)
+	 * 1. ~/.claude/settings.json (global user settings)
+	 * 2. ~/.claude/settings.local.json (local user settings)
+	 * 3. ./.claude/settings.json (project-specific settings)
+	 * 4. ./.claude/settings.local.json (project-specific local settings)
+	 * 5. ~/.claude.json (main global config)
 	 */
 	private async readClaudeCodeConfig(): Promise<any> {
 		if (this.cachedConfig) {
@@ -140,8 +140,6 @@ export class ClaudeCodeHandler extends BaseProvider implements ApiHandler {
 
 		// List of possible configuration file paths in order of priority
 		const possibleConfigPaths = [
-			// Main global config
-			path.join(homeDir, ".claude.json"),
 			// Global user settings
 			path.join(homeDir, ".claude", "settings.json"),
 			// Local user settings
@@ -150,6 +148,8 @@ export class ClaudeCodeHandler extends BaseProvider implements ApiHandler {
 			path.join(currentDir, ".claude", "settings.json"),
 			// Project-specific local settings
 			path.join(currentDir, ".claude", "settings.local.json"),
+			// Main global config
+			path.join(homeDir, ".claude.json"),
 		]
 
 		// Try each path in order
