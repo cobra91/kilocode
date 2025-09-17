@@ -292,7 +292,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
-				"claude-code": {}, // kilocode_change
+				"claude-code": mockModels, // kilocode_change
 			},
 		})
 	})
@@ -317,7 +317,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockRejectedValueOnce(new Error("Ollama API error")) // ollama
 			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway
 			.mockResolvedValueOnce(mockModels) // deepinfra
-			.mockResolvedValueOnce(mockModels) // kilocode_change claude-code 
+			.mockResolvedValueOnce(mockModels) // kilocode_change claude-code
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm
 
 		await webviewMessageHandler(mockClineProvider, {
@@ -338,7 +338,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				ollama: {},
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
-				"claude-code": {}, // kilocode_change
+				"claude-code": mockModels, // kilocode_change
 			},
 		})
 
