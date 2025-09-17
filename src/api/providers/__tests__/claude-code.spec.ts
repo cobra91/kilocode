@@ -590,7 +590,7 @@ describe("ClaudeCodeHandler", () => {
 		})
 
 		// Verify the cost is calculated and non-zero for paid usage
-		expect(results[1].totalCost).toBeGreaterThan(0)
+		expect((results[1] as any).totalCost).toBeGreaterThan(0)
 	})
 
 	test("should handle zero cost when no usage data is available", async () => {
