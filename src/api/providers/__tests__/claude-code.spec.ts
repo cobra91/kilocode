@@ -523,10 +523,120 @@ describe("ClaudeCodeHandler", () => {
 		await expect(iterator.next()).rejects.toThrow()
 	})
 
+	test("should calculate cost even when result chunk is missing", async () => {
+		const systemPrompt = "You are a helpful assistant"
+		const messages = [{ role: "user" as const, content: "Hello" }]
+
+		// Mock async generator with init and assistant messages but NO result chunk
+		// This simulates the scenario where the stream ends unexpectedly
+		const mockGenerator = async function* (): AsyncGenerator<ClaudeCodeMessage | string> {
+			// Init message indicating paid usage
+			yield {
+				type: "system" as const,
+				subtype: "init" as const,
+				session_id: "session_123",
+				tools: [],
+				mcp_servers: [],
+				apiKeySource: "/login managed key", // Paid usage
+			}
+			// Assistant message with usage data
+			yield {
+				type: "assistant" as const,
+				message: {
+					id: "msg_123",
+					type: "message",
+					role: "assistant",
+					model: "claude-3-5-sonnet-20241022",
+					content: [
+						{
+							type: "text",
+							text: "Hello there!",
+						},
+					],
+					stop_reason: null,
+					stop_sequence: null,
+					usage: {
+						input_tokens: 10,
+						output_tokens: 20,
+						cache_read_input_tokens: 5,
+						cache_creation_input_tokens: 3,
+					},
+				} as any,
+				session_id: "session_123",
+			}
+			// NOTE: No result chunk is yielded - this simulates the bug scenario
+		}
+
+		mockRunClaudeCode.mockReturnValue(mockGenerator())
+		const stream = handler.createMessage(systemPrompt, messages)
+		const results = []
+		for await (const chunk of stream) {
+			results.push(chunk)
+		}
+
+		// Should have text chunk and usage chunk with calculated cost
+		expect(results).toHaveLength(2)
+		expect(results[0]).toEqual({
+			type: "text",
+			text: "Hello there!",
+		})
+		expect(results[1]).toEqual({
+			type: "usage",
+			inputTokens: 10,
+			outputTokens: 20,
+			cacheReadTokens: 5,
+			cacheWriteTokens: 3,
+			totalCost: expect.any(Number), // Cost should be calculated even without result chunk
+		})
+
+		// Verify the cost is calculated and non-zero for paid usage
+		expect(results[1].totalCost).toBeGreaterThan(0)
+	})
+
+	test("should handle zero cost when no usage data is available", async () => {
+		const systemPrompt = "You are a helpful assistant"
+		const messages = [{ role: "user" as const, content: "Hello" }]
+
+		// Mock async generator with only init message (no usage data at all)
+		const mockGenerator = async function* (): AsyncGenerator<ClaudeCodeMessage | string> {
+			// Init message indicating paid usage
+			yield {
+				type: "system" as const,
+				subtype: "init" as const,
+				session_id: "session_123",
+				tools: [],
+				mcp_servers: [],
+				apiKeySource: "/login managed key", // Paid usage
+			}
+			// No assistant message with usage data and no result chunk
+		}
+
+		mockRunClaudeCode.mockReturnValue(mockGenerator())
+		const stream = handler.createMessage(systemPrompt, messages)
+		const results = []
+		for await (const chunk of stream) {
+			results.push(chunk)
+		}
+
+		// Should have usage chunk with zero cost
+		expect(results).toHaveLength(1)
+		expect(results[0]).toEqual({
+			type: "usage",
+			inputTokens: 0,
+			outputTokens: 0,
+			cacheReadTokens: 0,
+			cacheWriteTokens: 0,
+			totalCost: 0, // No usage data, so cost should be 0
+		})
+	})
+
 	test("should log warning for unsupported tool_use content", async () => {
 		const systemPrompt = "You are a helpful assistant"
 		const messages = [{ role: "user" as const, content: "Hello" }]
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+
+		// Mock os.homedir to prevent TypeError
+		mockOs.homedir.mockReturnValue("C:\\Users\\test")
 
 		// Mock async generator that yields tool_use content
 		const mockGenerator = async function* (): AsyncGenerator<ClaudeCodeMessage | string> {
@@ -587,22 +697,18 @@ describe("ClaudeCodeHandler", () => {
 
 		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
-		const options: ApiHandlerOptions = {
-			claudeCodePath: "claude",
-			apiModelId: "glm-4.5",
-		}
-		const handlerWithZAi = new ClaudeCodeHandler(options)
+		// Use the static method to test model detection directly
+		const providerInfo = await ClaudeCodeHandler.getAvailableModels("claude")
 
-		// Wait for async initialization
-		await new Promise((resolve) => setTimeout(resolve, 0))
+		// Should detect Z.ai provider
+		expect(providerInfo).not.toBeNull()
+		expect(providerInfo?.provider).toBe("zai")
 
-		const model = handlerWithZAi.getModel()
-
-		// Should use the Z.ai model ID from config
-		expect(model.id).toBe("glm-4.5")
-		// Should have Z.ai pricing (not Claude pricing)
-		expect(model.info.inputPrice).toBe(0.6) // Z.ai glm-4.5 international input price
-		expect(model.info.outputPrice).toBe(2.2) // Z.ai glm-4.5 international output price
+		// Should have Z.ai models with correct pricing
+		const models = providerInfo?.models || {}
+		expect(models["glm-4.5"]).toBeDefined()
+		expect(models["glm-4.5"].inputPrice).toBe(0.6) // Z.ai glm-4.5 international input price
+		expect(models["glm-4.5"].outputPrice).toBe(2.2) // Z.ai glm-4.5 international output price
 	})
 
 	test("should use Qwen model info when Qwen base URL is configured", async () => {
@@ -615,23 +721,19 @@ describe("ClaudeCodeHandler", () => {
 
 		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
-		const options: ApiHandlerOptions = {
-			claudeCodePath: "claude",
-			apiModelId: "qwen3-coder-plus",
-		}
-		const handlerWithQwen = new ClaudeCodeHandler(options)
+		// Use the static method to test model detection directly
+		const providerInfo = await ClaudeCodeHandler.getAvailableModels("claude")
 
-		// Wait for async initialization
-		await new Promise((resolve) => setTimeout(resolve, 0))
+		// Should detect Qwen provider
+		expect(providerInfo).not.toBeNull()
+		expect(providerInfo?.provider).toBe("qwen-code")
 
-		const model = handlerWithQwen.getModel()
-
-		// Should use the Qwen model ID from config
-		expect(model.id).toBe("qwen3-coder-plus")
-		// Should have Qwen pricing (free)
-		expect(model.info.inputPrice).toBe(0) // Qwen is free
-		expect(model.info.outputPrice).toBe(0) // Qwen is free
-		expect(model.info.contextWindow).toBe(1_000_000) // Qwen has 1M context
+		// Should have Qwen models with correct pricing
+		const models = providerInfo?.models || {}
+		expect(models["qwen3-coder-plus"]).toBeDefined()
+		expect(models["qwen3-coder-plus"].inputPrice).toBe(0) // Qwen is free
+		expect(models["qwen3-coder-plus"].outputPrice).toBe(0) // Qwen is free
+		expect(models["qwen3-coder-plus"].contextWindow).toBe(1_000_000) // Qwen has 1M context
 	})
 
 	test("should use DeepSeek model info when DeepSeek base URL is configured", async () => {
@@ -644,23 +746,19 @@ describe("ClaudeCodeHandler", () => {
 
 		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
-		const options: ApiHandlerOptions = {
-			claudeCodePath: "claude",
-			apiModelId: "deepseek-chat",
-		}
-		const handlerWithDeepSeek = new ClaudeCodeHandler(options)
+		// Use the static method to test model detection directly
+		const providerInfo = await ClaudeCodeHandler.getAvailableModels("claude")
 
-		// Wait for async initialization
-		await new Promise((resolve) => setTimeout(resolve, 0))
+		// Should detect DeepSeek provider
+		expect(providerInfo).not.toBeNull()
+		expect(providerInfo?.provider).toBe("deepseek")
 
-		const model = handlerWithDeepSeek.getModel()
-
-		// Should use the DeepSeek model ID from config
-		expect(model.id).toBe("deepseek-chat")
-		// Should have DeepSeek pricing
-		expect(model.info.inputPrice).toBe(0.27) // DeepSeek-chat input price
-		expect(model.info.outputPrice).toBe(1.1) // DeepSeek-chat output price
-		expect(model.info.supportsPromptCache).toBe(true) // DeepSeek supports caching
+		// Should have DeepSeek models with correct pricing
+		const models = providerInfo?.models || {}
+		expect(models["deepseek-chat"]).toBeDefined()
+		expect(models["deepseek-chat"].inputPrice).toBe(0.27) // DeepSeek-chat input price
+		expect(models["deepseek-chat"].outputPrice).toBe(1.1) // DeepSeek-chat output price
+		expect(models["deepseek-chat"].supportsPromptCache).toBe(true) // DeepSeek supports caching
 	})
 
 	test("should default to appropriate models when ANTHROPIC_MODEL is not specified", async () => {
