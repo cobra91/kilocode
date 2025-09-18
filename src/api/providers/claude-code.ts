@@ -349,10 +349,11 @@ export class ClaudeCodeHandler extends BaseProvider implements ApiHandler {
 
 			if (chunk.type === "result" && "result" in chunk) {
 				usage.totalCost = isPaidUsage ? chunk.total_cost_usd : 0
-
-				yield usage
 			}
 		}
+
+		// Always yield usage at the end, even if no result chunk was received
+		yield usage
 	}
 
 	getModel() {

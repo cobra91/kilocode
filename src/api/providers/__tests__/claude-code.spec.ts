@@ -99,7 +99,7 @@ describe("ClaudeCodeHandler", () => {
 		const stream = handler.createMessage(systemPrompt, messages)
 
 		// Need to start iterating to trigger the call
-		const iterator = stream[Symbol.asyncIterator]()
+		const iterator = (stream as any)[Symbol.asyncIterator]()
 		await iterator.next()
 
 		// Verify message filtering was called
@@ -110,15 +110,16 @@ describe("ClaudeCodeHandler", () => {
 			systemPrompt,
 			messages: filteredMessages,
 			path: "claude",
-			modelId: "claude-3-5-sonnet-20241022",
+			modelId: "claude-sonnet-4-20250514",
 			maxOutputTokens: undefined, // No maxOutputTokens configured in this test
+			envVars: {},
 		})
 	})
 
 	test("should pass maxOutputTokens to runClaudeCode when configured", async () => {
 		const options: ApiHandlerOptions = {
 			claudeCodePath: "claude",
-			apiModelId: "claude-3-5-sonnet-20241022",
+			apiModelId: "claude-sonnet-4-20250514",
 			claudeCodeMaxOutputTokens: 16384,
 		}
 		const handlerWithMaxTokens = new ClaudeCodeHandler(options)
@@ -138,7 +139,7 @@ describe("ClaudeCodeHandler", () => {
 		const stream = handlerWithMaxTokens.createMessage(systemPrompt, messages)
 
 		// Need to start iterating to trigger the call
-		const iterator = stream[Symbol.asyncIterator]()
+		const iterator = (stream as any)[Symbol.asyncIterator]()
 		await iterator.next()
 
 		// Verify runClaudeCode was called with maxOutputTokens
@@ -146,8 +147,9 @@ describe("ClaudeCodeHandler", () => {
 			systemPrompt,
 			messages: filteredMessages,
 			path: "claude",
-			modelId: "claude-3-5-sonnet-20241022",
+			modelId: "claude-sonnet-4-20250514",
 			maxOutputTokens: 16384,
+			envVars: {},
 		})
 	})
 
@@ -697,9 +699,14 @@ describe("ClaudeCodeHandler", () => {
 			},
 		}
 
-		// Mock fs.access to resolve for the first config file path
-		mockFs.access.mockResolvedValue(undefined)
-		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
+		// Mock fs.readFile to succeed for the first config file path (settings.json)
+		// and fail for others to simulate file not found
+		mockFs.readFile.mockImplementation((filePath: any) => {
+			if (filePath && filePath.toString && filePath.toString().includes("settings.json")) {
+				return Promise.resolve(JSON.stringify(mockConfig))
+			}
+			return Promise.reject(new Error("File not found"))
+		})
 
 		// Use the static method to test model detection directly
 		const providerInfo = await ClaudeCodeHandler.getAvailableModels("claude")
@@ -723,9 +730,14 @@ describe("ClaudeCodeHandler", () => {
 			},
 		}
 
-		// Mock fs.access to resolve for the first config file path
-		mockFs.access.mockResolvedValue(undefined)
-		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
+		// Mock fs.readFile to succeed for the first config file path (settings.json)
+		// and fail for others to simulate file not found
+		mockFs.readFile.mockImplementation((filePath: any) => {
+			if (filePath && filePath.toString && filePath.toString().includes("settings.json")) {
+				return Promise.resolve(JSON.stringify(mockConfig))
+			}
+			return Promise.reject(new Error("File not found"))
+		})
 
 		// Use the static method to test model detection directly
 		const providerInfo = await ClaudeCodeHandler.getAvailableModels("claude")
@@ -750,9 +762,14 @@ describe("ClaudeCodeHandler", () => {
 			},
 		}
 
-		// Mock fs.access to resolve for the first config file path
-		mockFs.access.mockResolvedValue(undefined)
-		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
+		// Mock fs.readFile to succeed for the first config file path (settings.json)
+		// and fail for others to simulate file not found
+		mockFs.readFile.mockImplementation((filePath: any) => {
+			if (filePath && filePath.toString && filePath.toString().includes("settings.json")) {
+				return Promise.resolve(JSON.stringify(mockConfig))
+			}
+			return Promise.reject(new Error("File not found"))
+		})
 
 		// Use the static method to test model detection directly
 		const providerInfo = await ClaudeCodeHandler.getAvailableModels("claude")
@@ -776,7 +793,15 @@ describe("ClaudeCodeHandler", () => {
 				ANTHROPIC_BASE_URL: "https://api.z.ai/api/anthropic",
 			},
 		}
-		mockFs.readFile.mockResolvedValue(JSON.stringify(zaiConfig))
+
+		// Mock fs.readFile to succeed for the first config file path (settings.json)
+		// and fail for others to simulate file not found
+		mockFs.readFile.mockImplementation((filePath: any) => {
+			if (filePath && filePath.toString && filePath.toString().includes("settings.json")) {
+				return Promise.resolve(JSON.stringify(zaiConfig))
+			}
+			return Promise.reject(new Error("File not found"))
+		})
 
 		const zaiOptions: ApiHandlerOptions = {
 			claudeCodePath: "claude",
@@ -795,7 +820,14 @@ describe("ClaudeCodeHandler", () => {
 				ANTHROPIC_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
 			},
 		}
-		mockFs.readFile.mockResolvedValue(JSON.stringify(qwenConfig))
+
+		// Update mock to return qwen config
+		mockFs.readFile.mockImplementation((filePath: any) => {
+			if (filePath && filePath.toString && filePath.toString().includes("settings.json")) {
+				return Promise.resolve(JSON.stringify(qwenConfig))
+			}
+			return Promise.reject(new Error("File not found"))
+		})
 
 		const qwenOptions: ApiHandlerOptions = {
 			claudeCodePath: "claude",
@@ -814,7 +846,14 @@ describe("ClaudeCodeHandler", () => {
 				ANTHROPIC_BASE_URL: "https://api.deepseek.com",
 			},
 		}
-		mockFs.readFile.mockResolvedValue(JSON.stringify(deepseekConfig))
+
+		// Update mock to return deepseek config
+		mockFs.readFile.mockImplementation((filePath: any) => {
+			if (filePath && filePath.toString && filePath.toString().includes("settings.json")) {
+				return Promise.resolve(JSON.stringify(deepseekConfig))
+			}
+			return Promise.reject(new Error("File not found"))
+		})
 
 		const deepseekOptions: ApiHandlerOptions = {
 			claudeCodePath: "claude",
@@ -844,9 +883,14 @@ describe("ClaudeCodeHandler", () => {
 				},
 			}
 
-			// Mock fs.access to resolve for the first config file path
-			mockFs.access.mockResolvedValue(undefined)
-			mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
+			// Mock fs.readFile to succeed for the first config file path (settings.json)
+			// and fail for others to simulate file not found
+			mockFs.readFile.mockImplementation((filePath: any) => {
+				if (filePath && filePath.toString && filePath.toString().includes("settings.json")) {
+					return Promise.resolve(JSON.stringify(mockConfig))
+				}
+				return Promise.reject(new Error("File not found"))
+			})
 
 			const options: ApiHandlerOptions = {
 				claudeCodePath: "claude",
@@ -867,9 +911,14 @@ describe("ClaudeCodeHandler", () => {
 				},
 			}
 
-			// Mock fs.access to resolve for the first config file path
-			mockFs.access.mockResolvedValue(undefined)
-			mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
+			// Mock fs.readFile to succeed for the first config file path (settings.json)
+			// and fail for others to simulate file not found
+			mockFs.readFile.mockImplementation((filePath: any) => {
+				if (filePath.includes("settings.json")) {
+					return Promise.resolve(JSON.stringify(mockConfig))
+				}
+				return Promise.reject(new Error("File not found"))
+			})
 
 			const options: ApiHandlerOptions = {
 				claudeCodePath: "claude",
@@ -890,9 +939,14 @@ describe("ClaudeCodeHandler", () => {
 				},
 			}
 
-			// Mock fs.access to resolve for the first config file path
-			mockFs.access.mockResolvedValue(undefined)
-			mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
+			// Mock fs.readFile to succeed for the first config file path (settings.json)
+			// and fail for others to simulate file not found
+			mockFs.readFile.mockImplementation((filePath: any) => {
+				if (filePath.includes("settings.json")) {
+					return Promise.resolve(JSON.stringify(mockConfig))
+				}
+				return Promise.reject(new Error("File not found"))
+			})
 
 			const options: ApiHandlerOptions = {
 				claudeCodePath: "claude",
@@ -945,9 +999,14 @@ describe("ClaudeCodeHandler", () => {
 				},
 			}
 
-			// Mock fs.access to resolve for the first config file path
-			mockFs.access.mockResolvedValue(undefined)
-			mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
+			// Mock fs.readFile to succeed for the first config file path (settings.json)
+			// and fail for others to simulate file not found
+			mockFs.readFile.mockImplementation((filePath: any) => {
+				if (filePath.includes("settings.json")) {
+					return Promise.resolve(JSON.stringify(mockConfig))
+				}
+				return Promise.reject(new Error("File not found"))
+			})
 
 			const availableModels = await ClaudeCodeHandler.getAvailableModels("claude")
 
