@@ -30,16 +30,18 @@ describe("ClaudeCodeHandler", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks()
+		// Mock os.homedir to prevent TypeError
+		mockOs.homedir.mockReturnValue("C:\\Users\\test")
 		const options: ApiHandlerOptions = {
 			claudeCodePath: "claude",
-			apiModelId: "claude-3-5-sonnet-20241022",
+			apiModelId: "claude-sonnet-4-20250514",
 		}
 		handler = new ClaudeCodeHandler(options)
 	})
 
 	test("should create handler with correct model configuration", () => {
 		const model = handler.getModel()
-		expect(model.id).toBe("claude-3-5-sonnet-20241022")
+		expect(model.id).toBe("claude-sonnet-4-20250514")
 		expect(model.info.supportsImages).toBe(false)
 		expect(model.info.supportsPromptCache).toBe(true) // Claude Code now supports prompt caching
 	})
@@ -695,6 +697,8 @@ describe("ClaudeCodeHandler", () => {
 			},
 		}
 
+		// Mock fs.access to resolve for the first config file path
+		mockFs.access.mockResolvedValue(undefined)
 		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
 		// Use the static method to test model detection directly
@@ -719,6 +723,8 @@ describe("ClaudeCodeHandler", () => {
 			},
 		}
 
+		// Mock fs.access to resolve for the first config file path
+		mockFs.access.mockResolvedValue(undefined)
 		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
 		// Use the static method to test model detection directly
@@ -744,6 +750,8 @@ describe("ClaudeCodeHandler", () => {
 			},
 		}
 
+		// Mock fs.access to resolve for the first config file path
+		mockFs.access.mockResolvedValue(undefined)
 		mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
 		// Use the static method to test model detection directly
@@ -836,6 +844,8 @@ describe("ClaudeCodeHandler", () => {
 				},
 			}
 
+			// Mock fs.access to resolve for the first config file path
+			mockFs.access.mockResolvedValue(undefined)
 			mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
 			const options: ApiHandlerOptions = {
@@ -857,6 +867,8 @@ describe("ClaudeCodeHandler", () => {
 				},
 			}
 
+			// Mock fs.access to resolve for the first config file path
+			mockFs.access.mockResolvedValue(undefined)
 			mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
 			const options: ApiHandlerOptions = {
@@ -878,6 +890,8 @@ describe("ClaudeCodeHandler", () => {
 				},
 			}
 
+			// Mock fs.access to resolve for the first config file path
+			mockFs.access.mockResolvedValue(undefined)
 			mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
 			const options: ApiHandlerOptions = {
@@ -931,6 +945,8 @@ describe("ClaudeCodeHandler", () => {
 				},
 			}
 
+			// Mock fs.access to resolve for the first config file path
+			mockFs.access.mockResolvedValue(undefined)
 			mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig))
 
 			const availableModels = await ClaudeCodeHandler.getAvailableModels("claude")
