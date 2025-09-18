@@ -583,6 +583,9 @@ describe("ClineProvider", () => {
 			diagnosticsEnabled: true,
 			openRouterImageApiKey: undefined,
 			openRouterImageGenerationSelectedModel: undefined,
+			remoteControlEnabled: false,
+			taskSyncEnabled: false,
+			featureRoomoteControlEnabled: false,
 		}
 
 		const message: ExtensionMessage = {
@@ -1361,19 +1364,11 @@ describe("ClineProvider", () => {
 				text: "Edited message content",
 			})
 
-			// Verify correct messages were kept (only messages before the edited one)
-			expect(mockCline.overwriteClineMessages).toHaveBeenCalledWith([
-				mockMessages[0],
-				mockMessages[1],
-				mockMessages[2],
-			])
+			// Verify correct messages were kept - delete from the preceding user message to truly replace it
+			expect(mockCline.overwriteClineMessages).toHaveBeenCalledWith([])
 
-			// Verify correct API messages were kept (only messages before the edited one)
-			expect(mockCline.overwriteApiConversationHistory).toHaveBeenCalledWith([
-				mockApiHistory[0],
-				mockApiHistory[1],
-				mockApiHistory[2],
-			])
+			// Verify correct API messages were kept
+			expect(mockCline.overwriteApiConversationHistory).toHaveBeenCalledWith([])
 
 			// The new flow calls webviewMessageHandler recursively with askResponse
 			// We need to verify the recursive call happened by checking if the handler was called again
@@ -3081,7 +3076,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 			mockCline.apiConversationHistory = [{ ts: 1000 }, { ts: 2000 }, { ts: 3000 }] as any[]
 			mockCline.overwriteClineMessages = vi.fn()
 			mockCline.overwriteApiConversationHistory = vi.fn()
-			mockCline.handleWebviewAskResponse = vi.fn()
+			mockCline.submitUserMessage = vi.fn()
 
 			await provider.addClineToStack(mockCline)
 			;(provider as any).getTaskWithId = vi.fn().mockResolvedValue({
@@ -3111,9 +3106,11 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 				text: "Edited message with preserved images",
 			})
 
-			// Verify messages were edited correctly - messages up to the edited message should remain
-			expect(mockCline.overwriteClineMessages).toHaveBeenCalledWith([mockMessages[0], mockMessages[1]])
-			expect(mockCline.overwriteApiConversationHistory).toHaveBeenCalledWith([{ ts: 1000 }, { ts: 2000 }])
+			// Verify messages were edited correctly - the ORIGINAL user message and all subsequent messages are removed
+			expect(mockCline.overwriteClineMessages).toHaveBeenCalledWith([mockMessages[0]])
+			expect(mockCline.overwriteApiConversationHistory).toHaveBeenCalledWith([{ ts: 1000 }])
+			// Verify submitUserMessage was called with the edited content
+			expect(mockCline.submitUserMessage).toHaveBeenCalledWith("Edited message with preserved images", undefined)
 		})
 
 		test("handles editing messages with file attachments", async () => {
@@ -3135,7 +3132,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 			mockCline.apiConversationHistory = [{ ts: 1000 }, { ts: 2000 }, { ts: 3000 }] as any[]
 			mockCline.overwriteClineMessages = vi.fn()
 			mockCline.overwriteApiConversationHistory = vi.fn()
-			mockCline.handleWebviewAskResponse = vi.fn()
+			mockCline.submitUserMessage = vi.fn()
 
 			await provider.addClineToStack(mockCline)
 			;(provider as any).getTaskWithId = vi.fn().mockResolvedValue({
@@ -3166,11 +3163,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 			})
 
 			expect(mockCline.overwriteClineMessages).toHaveBeenCalled()
-			expect(mockCline.handleWebviewAskResponse).toHaveBeenCalledWith(
-				"messageResponse",
-				"Edited message with file attachment",
-				undefined,
-			)
+			expect(mockCline.submitUserMessage).toHaveBeenCalledWith("Edited message with file attachment", undefined)
 		})
 	})
 
@@ -3262,7 +3255,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 			await messageHandler({ type: "editMessageConfirm", messageTs: 2000, text: "Edited message" })
 
 			// The error should be caught and shown
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("Error editing message: Connection lost")
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.message.error_editing_message")
 		})
 	})
 
@@ -3385,7 +3378,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 				text: "Edited message",
 			})
 
-			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("Error editing message: Unauthorized")
+			expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.message.error_editing_message")
 		})
 
 		describe("Malformed Requests and Invalid Formats", () => {
@@ -3609,7 +3602,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 
 				// Verify cleanup was attempted before failure
 				expect(cleanupSpy).toHaveBeenCalled()
-				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("Error editing message: Operation failed")
+				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.message.error_editing_message")
 			})
 
 			test("validates proper cleanup during failed delete operations", async () => {
@@ -3649,9 +3642,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 
 				// Verify cleanup was attempted before failure
 				expect(cleanupSpy).toHaveBeenCalled()
-				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-					"Error deleting message: Delete operation failed",
-				)
+				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("errors.message.error_deleting_message")
 			})
 		})
 
@@ -3674,7 +3665,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 				mockCline.apiConversationHistory = [{ ts: 1000 }, { ts: 2000 }] as any[]
 				mockCline.overwriteClineMessages = vi.fn()
 				mockCline.overwriteApiConversationHistory = vi.fn()
-				mockCline.handleWebviewAskResponse = vi.fn()
+				mockCline.submitUserMessage = vi.fn()
 
 				await provider.addClineToStack(mockCline)
 				;(provider as any).getTaskWithId = vi.fn().mockResolvedValue({
@@ -3703,11 +3694,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 				await messageHandler({ type: "editMessageConfirm", messageTs: 2000, text: largeEditedContent })
 
 				expect(mockCline.overwriteClineMessages).toHaveBeenCalled()
-				expect(mockCline.handleWebviewAskResponse).toHaveBeenCalledWith(
-					"messageResponse",
-					largeEditedContent,
-					undefined,
-				)
+				expect(mockCline.submitUserMessage).toHaveBeenCalledWith(largeEditedContent, undefined)
 			})
 
 			test("handles deleting messages with large payloads", async () => {
@@ -3887,7 +3874,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 				] as any[]
 				mockCline.overwriteClineMessages = vi.fn()
 				mockCline.overwriteApiConversationHistory = vi.fn()
-				mockCline.handleWebviewAskResponse = vi.fn()
+				mockCline.submitUserMessage = vi.fn()
 
 				await provider.addClineToStack(mockCline)
 				;(provider as any).getTaskWithId = vi.fn().mockResolvedValue({
@@ -3920,7 +3907,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 
 				// Should handle future timestamps correctly
 				expect(mockCline.overwriteClineMessages).toHaveBeenCalled()
-				expect(mockCline.handleWebviewAskResponse).toHaveBeenCalled()
+				expect(mockCline.submitUserMessage).toHaveBeenCalled()
 			})
 		})
 	})
