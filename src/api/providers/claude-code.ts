@@ -102,6 +102,8 @@ export class ClaudeCodeHandler extends BaseProvider implements ApiHandler {
 		try {
 			// Create a temporary instance to access config reading methods
 			const tempHandler = new ClaudeCodeHandler({ claudeCodePath })
+			// Clear any cached config to ensure fresh detection
+			tempHandler.cachedConfig = null
 			const providerInfo = await tempHandler.detectProviderFromConfig()
 
 			if (providerInfo) {
@@ -353,6 +355,17 @@ export class ClaudeCodeHandler extends BaseProvider implements ApiHandler {
 		}
 
 		// Always yield usage at the end, even if no result chunk was received
+		// If totalCost is not set (no result chunk), calculate it based on usage for paid usage
+		if (usage.totalCost === undefined && isPaidUsage && usage.inputTokens > 0) {
+			// For paid usage without result chunk, calculate cost based on current model's pricing
+			const model = this.getModel()
+			const inputCost = (usage.inputTokens / 1_000_000) * (model.info.inputPrice || 0)
+			const outputCost = (usage.outputTokens / 1_000_000) * (model.info.outputPrice || 0)
+			usage.totalCost = inputCost + outputCost
+		} else if (usage.totalCost === undefined) {
+			// For free usage or no usage data, cost is 0
+			usage.totalCost = 0
+		}
 		yield usage
 	}
 
