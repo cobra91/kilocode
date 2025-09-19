@@ -70,6 +70,7 @@ const sidebars: SidebarsConfig = {
 								"providers/requesty",
 								"providers/unbound",
 								"providers/v0",
+								"providers/vercel-ai-gateway",
 								"providers/virtual-quota-fallback",
 								"providers/vscode-lm",
 								"providers/xai",
@@ -90,6 +91,19 @@ const sidebars: SidebarsConfig = {
 				"features/enhance-prompt",
 				"features/checkpoints",
 				"tips-and-tricks",
+			],
+		},
+		{
+			type: "category",
+			label: "Kilo for Teams",
+			items: [
+				"teams/getting-started",
+				"teams/roles-permissions",
+				"teams/dashboard",
+				"teams/team-management",
+				"teams/billing",
+				"teams/analytics",
+				"teams/migration",
 			],
 		},
 		{
