@@ -36,7 +36,6 @@ export const getModelEndpoints = async ({
 	endpoint,
 	// kilocode_change start
 	baseUrl,
-	apiKey,
 	// kilocode_change end
 }: {
 	router: RouterName
@@ -44,7 +43,6 @@ export const getModelEndpoints = async ({
 	endpoint?: string
 	// kilocode_change start
 	baseUrl?: string
-	apiKey?: string
 	// kilocode_change end
 }): Promise<ModelRecord> => {
 	// OpenRouter is the only provider that supports model endpoints, but you
@@ -66,7 +64,6 @@ export const getModelEndpoints = async ({
 		// kilocode_change start
 		{
 			openRouterBaseUrl: baseUrl,
-			openRouterApiKey: apiKey,
 		},
 		// kilocode_change end
 	)

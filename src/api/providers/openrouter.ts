@@ -291,7 +291,6 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 				endpoint: this.options.openRouterSpecificProvider,
 				// kilocode_change start
 				baseUrl: this.options.openRouterBaseUrl,
-				apiKey: this.options.openRouterApiKey,
 				// kilocode_change end
 			}),
 		])
