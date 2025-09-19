@@ -2524,13 +2524,23 @@ export const webviewMessageHandler = async (
 				}
 
 				// Changed to /api/profile
+				const headers: Record<string, string> = {
+					Authorization: `Bearer ${kilocodeToken}`,
+					"Content-Type": "application/json",
+				}
+
+				// Add X-KILOCODE-TESTER: SUPPRESS header if the setting is enabled
+				if (
+					apiConfiguration.kilocodeTesterWarningsDisabledUntil &&
+					apiConfiguration.kilocodeTesterWarningsDisabledUntil > Date.now()
+				) {
+					headers["X-KILOCODE-TESTER"] = "SUPPRESS"
+				}
+
 				const response = await axios.get<Omit<ProfileData, "kilocodeToken">>(
 					`${getKiloBaseUriFromToken(kilocodeToken)}/api/profile`,
 					{
-						headers: {
-							Authorization: `Bearer ${kilocodeToken}`,
-							"Content-Type": "application/json",
-						},
+						headers,
 					},
 				)
 
@@ -2582,6 +2592,14 @@ export const webviewMessageHandler = async (
 
 				if (kilocodeOrganizationId) {
 					headers["X-KiloCode-OrganizationId"] = kilocodeOrganizationId
+				}
+
+				// Add X-KILOCODE-TESTER: SUPPRESS header if the setting is enabled
+				if (
+					apiConfiguration.kilocodeTesterWarningsDisabledUntil &&
+					apiConfiguration.kilocodeTesterWarningsDisabledUntil > Date.now()
+				) {
+					headers["X-KILOCODE-TESTER"] = "SUPPRESS"
 				}
 
 				const response = await axios.get(`${getKiloBaseUriFromToken(kilocodeToken)}/api/profile/balance`, {
