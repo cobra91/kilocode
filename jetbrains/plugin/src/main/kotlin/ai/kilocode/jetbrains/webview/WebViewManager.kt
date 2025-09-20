@@ -116,7 +116,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
      */
     private fun sendThemeConfigToWebViews(themeConfig: JsonObject) {
         logger.info("Send theme config to WebView")
-        
+
 //        getAllWebViews().forEach { webView ->
             try {
                 getLatestWebView()?.sendThemeConfigToWebView(themeConfig)
@@ -124,6 +124,21 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
                 logger.error("Failed to send theme config to WebView", e)
             }
 //        }
+    }
+
+    /**
+     * Dispose the latest WebView instance
+     */
+    private fun disposeLatestWebView() {
+        latestWebView?.let { webView ->
+            try {
+                logger.info("Disposing latest WebView instance: ${webView.viewType}/${webView.viewId}")
+                webView.dispose()
+            } catch (e: Exception) {
+                logger.error("Failed to dispose latest WebView", e)
+            }
+        }
+        latestWebView = null
     }
     
     /**
@@ -213,28 +228,31 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
      * Register WebView provider and create WebView instance
      */
     fun registerProvider(data: WebviewViewProviderData) {
-        logger.info("Register WebView provider and create WebView instance: ${data.viewType}")
+        logger.info("Register WebView provider and create WebView instance: ${data.viewType} for project: ${project.name}")
         val extension = data.extension
-        
+
+        // Clean up any existing WebView for this project before creating a new one
+        disposeLatestWebView()
+
         // Get location info from extension and set resource root directory
         try {
             @Suppress("UNCHECKED_CAST")
             val location = extension?.get("location") as? Map<String, Any?>
             val fsPath = location?.get("fsPath") as? String
-            
+
             if (fsPath != null) {
                 // Set resource root directory
                 val path = Paths.get(fsPath)
                 logger.info("Get resource directory path from extension: $path")
-                
+
                 // Ensure the resource directory exists
                 if (!path.exists()) {
                     path.createDirectories()
                 }
-                
+
                  // Update resource root directory
                 resourceRootDir = path
-                
+
                 // Initialize theme manager
                 initializeThemeManager(fsPath)
 
@@ -253,7 +271,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
 
         val title = data.options["title"] as? String ?: data.viewType
         val state = data.options["state"] as? Map<String, Any?> ?: emptyMap()
-        
+
         val webview = WebViewInstance(data.viewType, viewId, title, state,project,data.extension)
         // DEBUG HERE!
         // webview.showDebugWindow()
@@ -264,8 +282,8 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
 
         // Set as the latest created WebView
         latestWebView = webview
-        
-        logger.info("Create WebView instance: viewType=${data.viewType}, viewId=$viewId")
+
+        logger.info("Create WebView instance: viewType=${data.viewType}, viewId=$viewId for project: ${project.name}")
 
         // Notify callback
         notifyWebViewCreated(webview)
@@ -397,22 +415,45 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
     }
 
     
+    /**
+     * Handle project switching by cleaning up current state
+     */
+    fun onProjectSwitch() {
+        logger.info("Handling project switch for WebViewManager")
+
+        // Dispose current WebView
+        disposeLatestWebView()
+
+        // Reset theme initialization flag to allow re-initialization
+        themeInitialized = false
+
+        // Clear theme data
+        currentThemeConfig = null
+
+        // Clear resource directory reference
+        resourceRootDir = null
+
+        logger.info("Project switch handled, WebViewManager state reset")
+    }
+
     override fun dispose() {
         if (isDisposed) {
             logger.info("WebViewManager has already been disposed, ignoring repeated call")
             return
         }
         isDisposed = true
-        
-        logger.info("Releasing WebViewManager resources...")
+
+        logger.info("Releasing WebViewManager resources for project: ${project.name}")
 
         // Remove listener from theme manager
         try {
-            ThemeManager.getInstance().removeThemeChangeListener(this)
+            if (themeInitialized) {
+                ThemeManager.getInstance().removeThemeChangeListener(this)
+            }
         } catch (e: Exception) {
             logger.error("Failed to remove listener from theme manager", e)
         }
-        
+
         // Clean up resource directory
         try {
             // Only delete index.html file, keep other files
@@ -434,21 +475,18 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
             logger.error("Failed to clean up index.html file", e)
         }
 
-        try {
-            latestWebView?.dispose()
-        } catch (e: Exception) {
-            logger.error("Failed to release WebView resources", e)
-        }
-        
+        // Dispose WebView
+        disposeLatestWebView()
+
         // Reset theme data
         currentThemeConfig = null
-        
+
         // Clear callback list
         synchronized(creationCallbacks) {
             creationCallbacks.clear()
         }
-        
-        logger.info("WebViewManager released")
+
+        logger.info("WebViewManager released for project: ${project.name}")
     }
 
 
